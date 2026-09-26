@@ -13,6 +13,7 @@ const Candidate = require('../models/Candidate');
 const Application = require('../models/Application');
 const Followup = require('../models/Followup');
 const CallLog = require('../models/CallLog');
+const Interaction = require('../models/Interaction');
 const Notification = require('../models/Notification');
 const ActivityLog = require('../models/ActivityLog');
 const FunnelStage = require('../models/FunnelStage');
@@ -42,6 +43,7 @@ async function run() {
     Application.deleteMany({}),
     Followup.deleteMany({}),
     CallLog.deleteMany({}),
+    Interaction.deleteMany({}),
     Notification.deleteMany({}),
     ActivityLog.deleteMany({}),
     FunnelStage.deleteMany({}),
@@ -329,6 +331,32 @@ async function run() {
       });
     }
   }
+
+  console.log('[seed-demo] Creating interactions...');
+  await Interaction.create([
+    {
+      type: 'Email', calleeType: 'Candidate', candidate: candidates[0]._id,
+      application: applications[0].application._id, subject: 'Role details shared',
+      notes: 'Shared the role overview and interview process.', direction: 'Sent', employee: emp1._id,
+    },
+    {
+      type: 'Meeting', calleeType: 'Candidate', candidate: candidates[1]._id,
+      application: applications[1].application._id, subject: 'Initial screening',
+      notes: 'Discussed experience and availability.', meetingDate: daysFromNow(-1),
+      durationMinutes: 30, mode: 'Video', attendees: 'Candidate, Rohan Mehta', employee: emp1._id,
+    },
+    {
+      type: 'Email', calleeType: 'Client', client: clients[0]._id,
+      jobRequirement: jobRequirements[0]._id, subject: 'Candidate shortlist',
+      notes: 'Sent the first shortlist for review.', direction: 'Sent', employee: emp1._id,
+    },
+    {
+      type: 'Meeting', calleeType: 'Client', client: clients[1]._id,
+      jobRequirement: jobRequirements[2]._id, subject: 'Role intake meeting',
+      notes: 'Confirmed must-have skills and target timeline.', meetingDate: daysFromNow(-2),
+      durationMinutes: 45, mode: 'Video', attendees: 'Client, Priya Nair', employee: emp2._id,
+    },
+  ]);
 
   console.log('[seed-demo] Done.');
   console.log('');

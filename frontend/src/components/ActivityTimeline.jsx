@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { formatRelativeTime, formatFullDateTime } from '../utils/formatRelativeTime';
 
-const FILTERS = ['All', 'Calls', 'Follow-ups'];
+const FILTERS = ['All', 'Calls', 'Follow-ups', 'Email', 'Meeting', 'WhatsApp', 'SMS', 'Note'];
 
 function stageWordClass(name) {
   if (/joined/i.test(name || '')) return 'text-success';
@@ -82,12 +82,33 @@ function StageChangeRow({ event }) {
   );
 }
 
+function InteractionRow({ event }) {
+  const icon = { Email: '✉', Meeting: '▣', WhatsApp: '◉', SMS: '▤', Note: '✎' }[event.activityType] || '•';
+  return (
+    <li className="timeline-item">
+      <span className={`timeline-dot dot-interaction dot-interaction-${event.activityType?.toLowerCase()}`} aria-hidden="true">{icon}</span>
+      <div className="timeline-header">
+        <span className="timeline-label label-interaction">{event.activityType}</span>
+        <span className="timeline-time" title={formatFullDateTime(event.timestamp)}>{formatRelativeTime(event.timestamp)}</span>
+      </div>
+      <div className="timeline-body">
+        <p>{event.employee || 'Someone'}{event.subject ? ` — ${event.subject}` : ''}{event.direction ? ` (${event.direction})` : ''}</p>
+        {event.meetingDate && <p>Meeting: {formatFullDateTime(event.meetingDate)}{event.durationMinutes ? ` · ${event.durationMinutes} min` : ''}{event.mode ? ` · ${event.mode}` : ''}</p>}
+        {event.attendees && <p>Attendees: {event.attendees}</p>}
+        {event.notes && <p className="timeline-notes">{event.notes}</p>}
+        {event.outcome && <p className="timeline-notes">Outcome: {event.outcome}</p>}
+      </div>
+    </li>
+  );
+}
+
 export default function ActivityTimeline({ events }) {
   const [filter, setFilter] = useState('All');
 
   const filtered = useMemo(() => {
     if (filter === 'Calls') return events.filter((e) => e.type === 'call');
     if (filter === 'Follow-ups') return events.filter((e) => e.type === 'followup');
+    if (FILTERS.includes(filter) && filter !== 'All') return events.filter((e) => e.type === 'interaction' && e.activityType === filter);
     return events;
   }, [events, filter]);
 
@@ -113,6 +134,7 @@ export default function ActivityTimeline({ events }) {
           {filtered.map((event) => {
             if (event.type === 'call') return <CallRow key={event.id} event={event} />;
             if (event.type === 'followup') return <FollowupRow key={event.id} event={event} />;
+            if (event.type === 'interaction') return <InteractionRow key={event.id} event={event} />;
             return <StageChangeRow key={event.id} event={event} />;
           })}
         </ul>

@@ -12,11 +12,6 @@ export function disposeCallLog(callId, payload) {
   return api.put(`/call-logs/${callId}`, payload).then(({ data }) => data);
 }
 
-/** POST /api/call-logs — "Add past call": one that happened outside the app. */
-export function createPastCallLog(payload) {
-  return api.post('/call-logs', payload).then(({ data }) => data);
-}
-
 /** GET /api/call-logs — paginated call history, filterable. */
 export function fetchCallLogs(params) {
   return api.get('/call-logs', { params }).then(({ data }) => data);

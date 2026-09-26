@@ -2,7 +2,6 @@ const CallLog = require('../models/CallLog');
 const HttpError = require('../utils/httpError');
 const { getPagination, buildPaginatedResponse } = require('../utils/queryHelpers');
 const {
-  resolveCallee,
   loadCallRefs,
   resolveDisposition,
   createFollowupForCall,
@@ -53,50 +52,6 @@ async function listCallLogs(req, res) {
   res.json(buildPaginatedResponse({ data, total, page, limit }));
 }
 
-/** POST /api/call-logs — "Add past call": a call made outside the app. */
-async function createPastCall(req, res) {
-  const {
-    calleeType, candidateId, clientId, applicationId, jobRequirementId,
-    contactPhone, disposition, durationSeconds, calledAt, notes, nextFollowup,
-  } = req.body;
-
-  const refs = await resolveCallee(req, { calleeType, candidateId, clientId, applicationId, jobRequirementId });
-  await resolveDisposition(disposition, calleeType, nextFollowup);
-
-  const startedAt = calledAt || new Date(Date.now() - durationSeconds * 1000);
-  const endedAt = new Date(startedAt.getTime() + durationSeconds * 1000);
-
-  let contact = null;
-  if (refs.candidate) {
-    contact = { name: refs.candidate.name, phone: refs.candidate.phone };
-  } else {
-    const contacts = refs.client.callableContacts();
-    contact = contacts.find((c) => c.phone === contactPhone) || contacts[0] || null;
-  }
-
-  const callLog = await CallLog.create({
-    calleeType,
-    candidate: refs.candidate?._id,
-    client: refs.client?._id,
-    application: refs.application?._id,
-    jobRequirement: refs.jobRequirement?._id,
-    contactName: contact?.name,
-    contactPhone: contact?.phone,
-    employee: req.user.id,
-    disposition,
-    durationSeconds,
-    notes,
-    callStatus: 'completed',
-    startedAt,
-    endedAt,
-  });
-
-  const followup = nextFollowup ? await createFollowupForCall({ refs, nextFollowup, userId: req.user.id }) : null;
-
-  await callLog.populate(LOG_POPULATE);
-  res.status(201).json({ callLog, followup });
-}
-
 /**
  * PUT /api/call-logs/:id — logs the outcome of a call made through the call
  * bridge. Updates the same record (never creates a second CallLog) and
@@ -126,4 +81,4 @@ async function disposeCall(req, res) {
   res.json({ callLog: call, followup });
 }
 
-module.exports = { listCallLogs, createPastCall, disposeCall };
+module.exports = { listCallLogs, disposeCall };

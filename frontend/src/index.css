@@ -1057,6 +1057,23 @@ label {
   background: var(--slate);
 }
 
+.timeline-dot.dot-interaction {
+  width: 18px;
+  height: 18px;
+  left: -3px;
+  top: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--steel-soft);
+  color: var(--steel);
+  font-size: 11px;
+}
+
+.timeline-label.label-interaction {
+  color: var(--steel);
+}
+
 .timeline-dot.dot-joined {
   background: var(--success);
 }

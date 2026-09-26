@@ -1,6 +1,7 @@
 const CallLog = require('../models/CallLog');
 const Followup = require('../models/Followup');
 const ActivityLog = require('../models/ActivityLog');
+const Interaction = require('../models/Interaction');
 const FunnelStage = require('../models/FunnelStage');
 
 function callEvent(c) {
@@ -33,6 +34,24 @@ function followupEvent(f, now) {
   };
 }
 
+function interactionEvent(i) {
+  return {
+    id: i._id,
+    type: 'interaction',
+    activityType: i.type,
+    timestamp: i.createdAt,
+    employee: i.employee?.name,
+    subject: i.subject,
+    notes: i.notes,
+    outcome: i.outcome,
+    direction: i.direction,
+    meetingDate: i.meetingDate,
+    durationMinutes: i.durationMinutes,
+    mode: i.mode,
+    attendees: i.attendees,
+  };
+}
+
 function newestFirst(a, b) {
   return new Date(b.timestamp) - new Date(a.timestamp);
 }
@@ -43,12 +62,13 @@ const CALL_FIELDS = [
   { path: 'jobRequirement', select: 'title' },
 ];
 
-/** Calls + follow-ups + stage changes for one candidate, newest first. */
+/** Calls + follow-ups + interactions + stage changes for one candidate, newest first. */
 async function buildCandidateTimeline(candidateId, applicationIds) {
   const now = new Date();
-  const [callLogs, followups, activityLogs, funnelStages] = await Promise.all([
+  const [callLogs, followups, interactions, activityLogs, funnelStages] = await Promise.all([
     CallLog.find({ candidate: candidateId, callStatus: 'completed' }).populate(CALL_FIELDS),
     Followup.find({ candidate: candidateId }),
+    Interaction.find({ candidate: candidateId }).populate('employee', 'name'),
     ActivityLog.find({ entityType: 'Application', action: 'stage_change', entityId: { $in: applicationIds } }).populate(
       'actor',
       'name'
@@ -61,6 +81,7 @@ async function buildCandidateTimeline(candidateId, applicationIds) {
   return [
     ...callLogs.map(callEvent),
     ...followups.map((f) => followupEvent(f, now)),
+    ...interactions.map(interactionEvent),
     ...activityLogs.map((a) => ({
       id: a._id,
       type: 'stage_change',
@@ -72,14 +93,15 @@ async function buildCandidateTimeline(candidateId, applicationIds) {
   ].sort(newestFirst);
 }
 
-/** Calls + follow-ups for one client, newest first. */
+/** Calls + follow-ups + interactions for one client, newest first. */
 async function buildClientTimeline(clientId) {
   const now = new Date();
-  const [callLogs, followups] = await Promise.all([
+  const [callLogs, followups, interactions] = await Promise.all([
     CallLog.find({ client: clientId, callStatus: 'completed' }).populate(CALL_FIELDS),
     Followup.find({ client: clientId }),
+    Interaction.find({ client: clientId }).populate('employee', 'name'),
   ]);
-  return [...callLogs.map(callEvent), ...followups.map((f) => followupEvent(f, now))].sort(newestFirst);
+  return [...callLogs.map(callEvent), ...followups.map((f) => followupEvent(f, now)), ...interactions.map(interactionEvent)].sort(newestFirst);
 }
 
 module.exports = { buildCandidateTimeline, buildClientTimeline };

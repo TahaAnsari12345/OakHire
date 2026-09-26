@@ -52,19 +52,4 @@ const disposeCallSchema = z.object({
   nextFollowup: nextFollowupSchema,
 });
 
-// "Add past call": a call that happened outside the app (POST).
-const pastCallSchema = z
-  .object({
-    ...calleeFields,
-    disposition: objectId,
-    durationSeconds: z.coerce.number().int().min(0).max(6 * 60 * 60),
-    calledAt: z.coerce
-      .date()
-      .refine((d) => d.getTime() <= Date.now() + 60 * 1000, 'cannot be in the future')
-      .optional(),
-    notes: z.string().trim().max(2000).optional(),
-    nextFollowup: nextFollowupSchema,
-  })
-  .superRefine(requireMatchingCallee);
-
-module.exports = { initiateCallSchema, disposeCallSchema, pastCallSchema };
+module.exports = { initiateCallSchema, disposeCallSchema };

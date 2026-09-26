@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/axios';
 import CallButton from '../../components/CallButton';
 import ActivityTimeline from '../../components/ActivityTimeline';
-import AddPastCallModal from '../../components/AddPastCallModal';
+import LogActivityModal from '../../components/LogActivityModal';
 import OverflowMenu from '../../components/common/OverflowMenu';
 import CopyablePhone from '../../components/common/CopyablePhone';
 import { useBreadcrumb } from '../../context/BreadcrumbContext';
@@ -22,7 +22,7 @@ export default function CandidateDetail() {
   const [needsFollowup, setNeedsFollowup] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showPastCallModal, setShowPastCallModal] = useState(false);
+  const [showActivityModal, setShowActivityModal] = useState(false);
 
   const load = useCallback(async () => {
     setError('');
@@ -86,12 +86,12 @@ export default function CandidateDetail() {
         </div>
         <div className="detail-header-actions">
           <CallButton calleeType="Candidate" candidateId={candidate._id} candidatePhone={candidate.phone} />
+          <button type="button" className="btn-secondary" onClick={() => setShowActivityModal(true)}>Log activity</button>
           <Link to={`/candidates/${id}/edit`} className="btn-link">
             Edit
           </Link>
           <OverflowMenu
             items={[
-              { label: 'Add past call', onClick: () => setShowPastCallModal(true) },
               { label: 'Delete candidate', danger: true, onClick: handleDelete },
             ]}
           />
@@ -147,14 +147,14 @@ export default function CandidateDetail() {
         <ActivityTimeline events={events} />
       </div>
 
-      {showPastCallModal && (
-        <AddPastCallModal
+      {showActivityModal && (
+        <LogActivityModal
           calleeType="Candidate"
-          candidateId={candidate._id}
+          entityId={candidate._id}
           related={applications}
-          onClose={() => setShowPastCallModal(false)}
+          onClose={() => setShowActivityModal(false)}
           onLogged={() => {
-            setShowPastCallModal(false);
+            setShowActivityModal(false);
             load();
           }}
         />

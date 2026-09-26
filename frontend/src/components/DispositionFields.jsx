@@ -4,7 +4,7 @@ import { TYPES as FOLLOWUP_TYPES } from '../constants/followup';
 
 /**
  * Disposition dropdown (filtered by calleeType) + notes + the conditional
- * next-follow-up block. Shared by the dispose-call flow and "Add past call".
+ * next-follow-up block. Shared by the call outcome flow.
  * Lifts its state up via onChange so the parent form owns submission.
  */
 export default function DispositionFields({ calleeType, value, onChange }) {
